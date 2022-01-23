@@ -9,4 +9,5 @@ void updateScreen(long now);
 bool SleepPM2(void *);
 bool WakupPM2(void *);
 int SetCurrentPM2();
+bool updateScreen(void *);
 #endif
