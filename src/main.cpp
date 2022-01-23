@@ -26,8 +26,8 @@ const bool hasCO2 = true;
 const bool hasSHT = true;
 
 // WiFi and IP connection info.
-const char* ssid = "WIFI";
-const char* password = "PASS";
+const char* ssid = "";
+const char* password = "";
 const int port = 9925;
 
 // Uncomment the line below to configure a static IP address.
@@ -42,7 +42,6 @@ IPAddress subnet(255, 255, 255, 0);
 const int updateFrequency = 5000;
 const int pmSensorOnForMs = 30000;
 const int pmSensorOnPeriod = 120000;
-bool pmSensorAwake = true;
 
 // For housekeeping.
 long lastUpdate;
@@ -65,7 +64,11 @@ void setup() {
     showTextRectangle("Init", String(ESP.getChipId(),HEX),true);
 
     // Enable enabled sensors.
-    if (hasPM) ag.PMS_Init();
+    if (hasPM) {
+        ag.PMS_Init();
+        WakupPM2(NULL);
+        timer.every(pmSensorOnPeriod, WakupPM2);
+    }
     if (hasCO2) ag.CO2_Init();
     if (hasSHT) ag.TMP_RH_Init(0x44);
 
@@ -111,18 +114,17 @@ void setup() {
     server.begin();
     Serial.println("HTTP server started at ip " + WiFi.localIP().toString() + ":" + String(port));
     showTextRectangle("Listening To", WiFi.localIP().toString() + ":" + String(port),true);
-    SetCurrentPM2();
-    ag.sleep();
-    timer.every(pmSensorOnPeriod, WakupPM2);
 }
 
 bool WakupPM2(void *) {
+    Serial.println("Waking up PM2 sensor");
     ag.wakeUp();
     timer.in(pmSensorOnForMs, SleepPM2);
     return true;
 }
 
 bool SleepPM2(void *) {
+    Serial.println("Putting to sleep PM2 sensor");
     SetCurrentPM2();
     ag.sleep();
     return true;
@@ -153,13 +155,8 @@ int GetPM2() {
 
 void SetCurrentPM2() {
     int stat = ag.getPM2_Raw();
-
-    while (stat <=0){
-        Serial.println("Wrong PM2 reading: " +String(stat));
-        stat = ag.getPM2_Raw();
-        delay(10);
-    }
     lastPM2 = stat;
+    Serial.println("Set PM2 to " + String(lastPM2));
 }
 
 String GenerateMetrics() {
