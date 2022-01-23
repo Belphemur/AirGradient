@@ -126,8 +126,8 @@ bool WakupPM2(void *) {
 
 bool SleepPM2(void *) {
     Serial.println("Saving current PM2 value");
-    SetCurrentPM2();
-    if(lastPM2 !=0) {
+    auto lastMesure = SetCurrentPM2();
+    if(lastMesure !=0) {
         ag.sleep();
         Serial.println("Putting PM2 sensor to sleep");
     }
@@ -154,10 +154,13 @@ int GetPM2() {
     return lastPM2;
 }
 
-void SetCurrentPM2() {
+int SetCurrentPM2() {
     int stat = ag.getPM2_Raw();
-    lastPM2 = stat;
+    if(stat>0) {
+        lastPM2 = stat;
+    }
     Serial.println("Set PM2 to " + String(lastPM2));
+    return stat;
 }
 
 String GenerateMetrics() {
