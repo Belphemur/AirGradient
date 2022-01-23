@@ -114,6 +114,7 @@ void setup() {
     server.begin();
     Serial.println("HTTP server started at ip " + WiFi.localIP().toString() + ":" + String(port));
     showTextRectangle("Listening To", WiFi.localIP().toString() + ":" + String(port),true);
+    timer.every(updateFrequency, updateScreen);
 }
 
 bool WakupPM2(void *) {
@@ -124,18 +125,18 @@ bool WakupPM2(void *) {
 }
 
 bool SleepPM2(void *) {
-    Serial.println("Putting to sleep PM2 sensor");
+    Serial.println("Saving current PM2 value");
     SetCurrentPM2();
-    ag.sleep();
+    if(lastPM2 !=0) {
+        ag.sleep();
+        Serial.println("Putting PM2 sensor to sleep");
+    }
     return true;
 }
 
 void loop() {
     timer.tick();
-    long t = millis();
-
     server.handleClient();
-    updateScreen(t);
 }
 
 int GetCO2() {
@@ -239,37 +240,36 @@ void showTextRectangle(String ln1, String ln2, boolean small) {
     display.display();
 }
 
-void updateScreen(long now) {
-    if ((now - lastUpdate) > updateFrequency) {
-        // Take a measurement at a fixed interval.
-        switch (counter) {
-            case 0:
-                if (hasPM) {
-                    int stat = GetPM2();
-                    showTextRectangle("PM2",String(stat),false);
-                }
-                break;
-            case 1:
-                if (hasCO2) {
-                    int stat = GetCO2();
-                    showTextRectangle("CO2", String(stat), false);
-                }
-                break;
-            case 2:
-                if (hasSHT) {
-                    TMP_RH stat = ag.periodicFetchData();
-                    showTextRectangle("TMP", String(stat.t, 1) + "C", false);
-                }
-                break;
-            case 3:
-                if (hasSHT) {
-                    TMP_RH stat = ag.periodicFetchData();
-                    showTextRectangle("HUM", String(stat.rh) + "%", false);
-                }
-                break;
-        }
-        counter++;
-        if (counter > 3) counter = 0;
-        lastUpdate = millis();
+bool updateScreen(void *) {
+    // Take a measurement at a fixed interval.
+    switch (counter) {
+        case 0:
+            if (hasPM) {
+                int stat = GetPM2();
+                showTextRectangle("PM2",String(stat),false);
+            }
+            break;
+        case 1:
+            if (hasCO2) {
+                int stat = GetCO2();
+                showTextRectangle("CO2", String(stat), false);
+            }
+            break;
+        case 2:
+            if (hasSHT) {
+                TMP_RH stat = ag.periodicFetchData();
+                showTextRectangle("TMP", String(stat.t, 1) + "C", false);
+            }
+            break;
+        case 3:
+            if (hasSHT) {
+                TMP_RH stat = ag.periodicFetchData();
+                showTextRectangle("HUM", String(stat.rh) + "%", false);
+            }
+            break;
     }
+    counter++;
+    if (counter > 3) counter = 0;
+
+    return true;
 }
