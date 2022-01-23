@@ -39,12 +39,11 @@ IPAddress subnet(255, 255, 255, 0);
 #endif
 
 // The frequency of measurement updates.
-const int updateFrequency = 5000;
+const int screenUpdateFrequencyMs = 5000;
 const int pmSensorOnForMs = 30000;
-const int pmSensorOnPeriod = 120000;
+const int pmSensorOnPeriodMs = 120000;
 
 // For housekeeping.
-long lastUpdate;
 int counter = 0;
 int lastPM2 = 0;
 
@@ -67,7 +66,7 @@ void setup() {
     if (hasPM) {
         ag.PMS_Init();
         WakupPM2(NULL);
-        timer.every(pmSensorOnPeriod, WakupPM2);
+        timer.every(pmSensorOnPeriodMs, WakupPM2);
     }
     if (hasCO2) ag.CO2_Init();
     if (hasSHT) ag.TMP_RH_Init(0x44);
@@ -114,7 +113,7 @@ void setup() {
     server.begin();
     Serial.println("HTTP server started at ip " + WiFi.localIP().toString() + ":" + String(port));
     showTextRectangle("Listening To", WiFi.localIP().toString() + ":" + String(port),true);
-    timer.every(updateFrequency, updateScreen);
+    timer.every(screenUpdateFrequencyMs, updateScreen);
 }
 
 bool WakupPM2(void *) {
