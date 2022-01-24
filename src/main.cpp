@@ -12,36 +12,13 @@
 #include <Wire.h>
 #include "SSD1306Wire.h"
 #include <arduino-timer.h>
+#include "Configuration/refresh.h"
+#include "Configuration/user.h"
 
 AirGradient ag = AirGradient();
 
 // Config ----------------------------------------------------------------------
 
-// Optional.
-const char* deviceId = "";
-
-// Hardware options for AirGradient DIY sensor.
-const bool hasPM = true;
-const bool hasCO2 = true;
-const bool hasSHT = true;
-
-// WiFi and IP connection info.
-const char* ssid = "";
-const char* password = "";
-const int port = 9925;
-
-// Uncomment the line below to configure a static IP address.
-#define staticip
-#ifdef staticip
-IPAddress static_ip(192, 168, 42, 20);
-IPAddress gateway(192, 168, 42, 1);
-IPAddress subnet(255, 255, 255, 0);
-#endif
-
-// The frequency of measurement updates.
-const int screenUpdateFrequencyMs = 5000;
-const int pmSensorOnForMs = 30000;
-const int pmSensorOnPeriodMs = 120000;
 
 // For housekeeping.
 int counter = 0;
