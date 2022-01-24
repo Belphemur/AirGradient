@@ -1,14 +1,25 @@
-//
-// Created by Antoine on 2022-01-24.
-//
+#pragma once
+#include <ESP8266WebServer.h>
+#include "Metrics/MetricsGatherer.h"
 
-#ifndef UNTITLED1_SERVER_H
-#define UNTITLED1_SERVER_H
+namespace Prometheus
+{
+    class Server
+    {
+    private:
+        ESP8266WebServer *_server;
+        int _serverPort;
+        Metrics::Gatherer* _metrics;
 
+        void _handleRoot();
+        void _handleNotFound();
+        String _generateMetrics();
 
-class Server {
+    public:
+        Server(const int serverPort, Metrics::Gatherer* metrics);
+        void loop();
+        void setup();
+        virtual ~Server();
+    };
 
-};
-
-
-#endif //UNTITLED1_SERVER_H
+}
