@@ -7,16 +7,16 @@ namespace Prometheus
     class Server
     {
     private:
-        ESP8266WebServer *_server;
+        std::unique_ptr<ESP8266WebServer> _server;
         int _serverPort;
-        Metrics::Gatherer* _metrics;
+        std::shared_ptr<Metrics::Gatherer> _metrics;
 
         void _handleRoot();
         void _handleNotFound();
         String _generateMetrics();
 
     public:
-        Server(const int serverPort, Metrics::Gatherer* metrics);
+        Server(const int serverPort, std::shared_ptr<Metrics::Gatherer> metrics);
         void loop();
         void setup();
         virtual ~Server();

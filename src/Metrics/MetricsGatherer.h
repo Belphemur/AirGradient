@@ -16,8 +16,8 @@ namespace Metrics
     {
 
     private:
-        Timer<> *_timer;
-        AirGradient *_air_gradient;
+        std::shared_ptr<Timer<>> _timer;
+        std::shared_ptr<AirGradient> _air_gradient;
         Data _data;
         Gatherer() {}
 
@@ -34,8 +34,8 @@ namespace Metrics
         bool _wakeUpPm2(void *);
         bool _getPm2DataSleep(void *);
         bool _getAllSensorData(void *);
-        void setup(Timer<> *timer, AirGradient *air_gradient);
-        inline Data getData() { return _data; }
+        void setup(std::shared_ptr<Timer<>> timer, std::shared_ptr<AirGradient> air_gradient);
+        inline const Data getData() { return _data; }
     };
 
 }

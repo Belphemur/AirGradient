@@ -2,10 +2,10 @@
 #include "Configuration/sensors.h"
 #include "Configuration/user.h"
 
-Prometheus::Server::Server(const int serverPort, Metrics::Gatherer *metrics)
+Prometheus::Server::Server(const int serverPort, std::shared_ptr<Metrics::Gatherer> metrics)
 {
     _serverPort = serverPort;
-    _server = new ESP8266WebServer(_serverPort);
+    _server = std::unique_ptr<ESP8266WebServer>(new ESP8266WebServer(_serverPort));
     _metrics = metrics;
 }
 
@@ -13,7 +13,6 @@ Prometheus::Server::~Server()
 {
     _server->stop();
     _server->close();
-    delete _server;
 }
 
 void Prometheus::Server::loop()

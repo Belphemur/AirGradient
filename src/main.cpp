@@ -29,7 +29,7 @@ int counter = 0;
 
 SSD1306Wire display(0x3c, SDA, SCL);
 auto timer = timer_create_default();
-auto metrics = &Gatherer::getInstance();
+auto metrics = std::shared_ptr<Gatherer>(&Gatherer::getInstance());
 auto server = Prometheus::Server(port, metrics);
 
 void setup()
@@ -41,7 +41,7 @@ void setup()
     display.flipScreenVertically();
     showTextRectangle("Init", String(ESP.getChipId(), HEX), true);
 
-    metrics->setup(&timer, &ag);
+    metrics->setup(std::shared_ptr<Timer<>>(&timer), std::shared_ptr<AirGradient>(&ag));
 
     // Set static IP address if configured.
 #ifdef staticip

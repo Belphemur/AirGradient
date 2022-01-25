@@ -64,7 +64,7 @@ bool Metrics::Gatherer::_getAllSensorData(void *param)
     return true;
 }
 
-void Metrics::Gatherer::setup(Timer<> *timer, AirGradient *air_gradient)
+void Metrics::Gatherer::setup(std::shared_ptr<Timer<>> timer, std::shared_ptr<AirGradient> air_gradient)
 {
     _air_gradient = air_gradient;
     _timer = timer;
