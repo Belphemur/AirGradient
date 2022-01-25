@@ -8,7 +8,7 @@ namespace Metrics
     {
         int CO2;
         int PM2;
-        int TMP;
+        float TMP;
         int HUM;
     };
 
