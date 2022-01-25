@@ -26,8 +26,12 @@ bool Metrics::Gatherer::_wakeUpPm2(void *param)
 
 bool Metrics::Gatherer::_getPm2DataSleep(void *param)
 {
+    auto previousReading = _data.PM2;
     auto reading = _air_gradient->getPM2_Raw();
-    if (reading != 0)
+
+    //Sometimes the sensor give 0 when there isn't any value
+    //let's check that it's possible because the previous value was already under 10
+    if (reading != 0 || previousReading < 10)
     {
         _data.PM2 = reading;
         _air_gradient->sleep();
@@ -38,7 +42,7 @@ bool Metrics::Gatherer::_getPm2DataSleep(void *param)
 bool Metrics::Gatherer::_getAllSensorData(void *param)
 {
 #ifdef HAS_CO2
-    int co2 = _air_gradient->getCO2_Raw();
+    auto co2 = _air_gradient->getCO2_Raw();
 
     while (co2 <= 0 || co2 >= 60000)
     {
