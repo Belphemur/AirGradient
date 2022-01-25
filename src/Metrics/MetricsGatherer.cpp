@@ -1,57 +1,40 @@
 #include "MetricsGatherer.h"
 #include "Configuration/sensors.h"
 
-bool static_wakeUpPm2(void *param)
-{
-    return Metrics::Gatherer::getInstance()._wakeUpPm2(param);
-}
-
-bool static_getPm2DataSleep(void *param)
-{
-    return Metrics::Gatherer::getInstance()._getPm2DataSleep(param);
-}
-
-bool static_getAllSensorData(void *param)
-{
-    return Metrics::Gatherer::getInstance()._getAllSensorData(param);
-}
-
 Metrics::Gatherer::Gatherer()
 {
-    _air_gradient = std::make_unique<AirGradient>();
+    _airGradient = std::make_unique<AirGradient>();
 }
 
-bool Metrics::Gatherer::_wakeUpPm2(void *param)
+void Metrics::Gatherer::_wakeUpPm2()
 {
-    _air_gradient->wakeUp();
-    _timer->in(PM_SENSOR_DELAY_BEFORE_READING, static_getPm2DataSleep);
-    return true;
+    _airGradient->wakeUp();
+    _pm2ReadSleepTicker.once_ms(PM_SENSOR_DELAY_BEFORE_READING, std::bind(&Gatherer::_getPm2DataSleep, this));
 }
 
-bool Metrics::Gatherer::_getPm2DataSleep(void *param)
+void Metrics::Gatherer::_getPm2DataSleep()
 {
     auto previousReading = _data.PM2;
-    auto reading = _air_gradient->getPM2_Raw();
+    auto reading = _airGradient->getPM2_Raw();
 
     //Sometimes the sensor give 0 when there isn't any value
     //let's check that it's possible because the previous value was already under 10
     if (reading != 0 || previousReading < 10)
     {
         _data.PM2 = reading;
-        _air_gradient->sleep();
+        _airGradient->sleep();
     }
-    return true;
 }
 
-bool Metrics::Gatherer::_getAllSensorData(void *param)
+void Metrics::Gatherer::_getAllSensorData()
 {
 #ifdef HAS_CO2
-    auto co2 = _air_gradient->getCO2_Raw();
+    auto co2 = _airGradient->getCO2_Raw();
 
     while (co2 <= 0 || co2 >= 60000)
     {
         Serial.println("Wrong CO2 reading: " + String(co2));
-        co2 = _air_gradient->getCO2_Raw();
+        co2 = _airGradient->getCO2_Raw();
         delay(10);
     }
 
@@ -60,29 +43,27 @@ bool Metrics::Gatherer::_getAllSensorData(void *param)
 
 #ifdef HAS_SHT
 
-    TMP_RH temp_data = _air_gradient->periodicFetchData();
+    TMP_RH temp_data = _airGradient->periodicFetchData();
     _data.TMP = temp_data.t;
     _data.HUM = temp_data.rh;
 
 #endif
-    return true;
 }
 
-void Metrics::Gatherer::setup(std::shared_ptr<Timer<>> timer)
+void Metrics::Gatherer::setup()
 {
-    _timer = timer;
 #ifdef HAS_PM
-    _air_gradient->PMS_Init();
-    _wakeUpPm2(NULL);
-    _timer->every(PM_SENSOR_PERIOD_MS, static_wakeUpPm2);
+    _airGradient->PMS_Init();
+    _wakeUpPm2();
+    _pm2ReadSleepTicker.attach_ms(PM_SENSOR_PERIOD_MS, std::bind(&Gatherer::_wakeUpPm2, this));
 #endif
 #ifdef HAS_CO2
-    _air_gradient->CO2_Init();
+    _airGradient->CO2_Init();
 #endif
 #ifdef HAS_SHT
-    _air_gradient->TMP_RH_Init(0x44);
+    _airGradient->TMP_RH_Init(0x44);
 #endif
 #if defined(HAS_CO2) || defined(HAS_SHT)
-    _timer->every(SENSOR_PERIOD_MS, static_getAllSensorData);
+    _allSensorTicker.attach_ms(SENSOR_PERIOD_MS, std::bind(&Gatherer::_getAllSensorData, this));
 #endif
 }

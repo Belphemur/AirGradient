@@ -9,7 +9,6 @@
 
 #include <Wire.h>
 #include "SSD1306Wire.h"
-#include <arduino-timer.h>
 #include "Configuration/user.h"
 #include "Metrics/MetricsGatherer.h"
 #include "Prometheus/Server.h"
@@ -25,9 +24,9 @@ int counter = 0;
 // Config End ------------------------------------------------------------------
 
 SSD1306Wire display(0x3c, SDA, SCL);
-auto timer = std::make_shared<Timer<>>();
-auto metrics = std::shared_ptr<Gatherer>(&Gatherer::getInstance());
+auto metrics = std::make_shared<Gatherer>();
 auto server = Prometheus::Server(port, metrics);
+Ticker updateScreenTicker;
 
 void setup()
 {
@@ -38,7 +37,7 @@ void setup()
     display.flipScreenVertically();
     showTextRectangle("Init", String(ESP.getChipId(), HEX), true);
 
-    metrics->setup(timer);
+    metrics->setup();
 
     // Set static IP address if configured.
 #ifdef staticip
@@ -82,12 +81,11 @@ void setup()
     server.setup();
 
     showTextRectangle("Listening To", WiFi.localIP().toString() + ":" + String(port), true);
-    timer->every(screenUpdateFrequencyMs, updateScreen);
+    updateScreenTicker.attach_ms(screenUpdateFrequencyMs, updateScreen);
 }
 
 void loop()
 {
-    timer->tick();
     server.loop();
 }
 
@@ -109,7 +107,7 @@ void showTextRectangle(String ln1, String ln2, boolean small)
     display.display();
 }
 
-bool updateScreen(void *)
+void updateScreen()
 {
     auto data = metrics->getData();
     // Take a measurement at a fixed interval.
@@ -137,6 +135,4 @@ bool updateScreen(void *)
     counter++;
     if (counter > 3)
         counter = 0;
-
-    return true;
 }

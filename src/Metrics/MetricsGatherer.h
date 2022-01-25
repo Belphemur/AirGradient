@@ -1,5 +1,5 @@
 #pragma once
-#include <arduino-timer.h>
+#include <Ticker.h>
 #include <AirGradient.h>
 
 namespace Metrics
@@ -16,27 +16,23 @@ namespace Metrics
     {
 
     private:
-        std::shared_ptr<Timer<>> _timer;
-        std::unique_ptr<AirGradient> _air_gradient;
+        Ticker _pm2WakerUpTicker;
+        Ticker _pm2ReadSleepTicker;
+        Ticker _allSensorTicker;
+        std::unique_ptr<AirGradient> _airGradient;
         Data _data;
-        Gatherer();
+
+        void _wakeUpPm2();
+        void _getPm2DataSleep();
+        void _getAllSensorData();
 
     public:
-        static Gatherer &getInstance()
-        {
-            static Gatherer instance; // Guaranteed to be destroyed.
-                                      // Instantiated on first use.
-            return instance;
-        }
-        Gatherer(Gatherer const &) = delete;
-        void operator=(Gatherer const &) = delete;
+        Gatherer();
 
-        bool _wakeUpPm2(void *);
-        bool _getPm2DataSleep(void *);
-        bool _getAllSensorData(void *);
-        void setup(std::shared_ptr<Timer<>> timer);
+        void setup();
         inline const Data getData() { return _data; }
-        virtual ~Gatherer() {
+        virtual ~Gatherer()
+        {
             _data.CO2 = 0;
             _data.HUM = 0;
             _data.PM2 = 0;

@@ -3,5 +3,5 @@
 #define Main_h
 
 void showTextRectangle(String ln1, String ln2, boolean small);
-bool updateScreen(void *);
+void updateScreen();
 #endif
