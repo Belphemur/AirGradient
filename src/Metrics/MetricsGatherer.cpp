@@ -26,9 +26,10 @@ bool Metrics::Gatherer::_wakeUpPm2(void *param)
 
 bool Metrics::Gatherer::_getPm2DataSleep(void *param)
 {
-    _data.PM2 = _air_gradient->getPM2_Raw();
-    if (_data.PM2 != 0)
+    auto reading = _air_gradient->getPM2_Raw();
+    if (reading != 0)
     {
+        _data.PM2 = reading;
         _air_gradient->sleep();
     }
     return true;
