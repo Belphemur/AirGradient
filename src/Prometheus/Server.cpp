@@ -37,32 +37,27 @@ String Prometheus::Server::_generateMetrics()
     String idString = "{id=\"" + String(deviceId) + "\",mac=\"" + WiFi.macAddress().c_str() + "\"}";
 
     auto metrics = _metrics->getData();
-    int stat;
-#ifdef HAS_PM
-    stat = metrics.PM2;
 
+#ifdef HAS_PM
     message += "# HELP pm02 Particulate Matter PM2.5 value\n";
     message += "# TYPE pm02 gauge\n";
     message += "pm02";
     message += idString;
-    message += String(stat);
+    message += String(metrics.PM2);
     message += "\n";
 #endif
 
 #ifdef HAS_CO2
-    stat = metrics.CO2;
-
     message += "# HELP rco2 CO2 value, in ppm\n";
     message += "# TYPE rco2 gauge\n";
     message += "rco2";
     message += idString;
-    message += String(stat);
+    message += String( metrics.CO2);
     message += "\n";
 
 #endif
 
 #ifdef HAS_SHT
-
     message += "# HELP atmp Temperature, in degrees Celsius\n";
     message += "# TYPE atmp gauge\n";
     message += "atmp";
