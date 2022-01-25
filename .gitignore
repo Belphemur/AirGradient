@@ -3,4 +3,3 @@ CMakeListsPrivate.txt
 cmake-build-*/ 
 .vscode
 .idea
-src/Configuration/user.cpp
