@@ -1,5 +1,5 @@
 #include "MetricsGatherer.h"
-#include "../Configuration/sensors.h"
+#include "Configuration/sensors.h"
 
 bool static_wakeUpPm2(void *param)
 {
