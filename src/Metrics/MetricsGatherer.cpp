@@ -16,6 +16,10 @@ bool static_getAllSensorData(void *param)
     return Metrics::Gatherer::getInstance()._getAllSensorData(param);
 }
 
+Metrics::Gatherer::Gatherer()
+{
+    _air_gradient = std::make_unique<AirGradient>();
+}
 
 bool Metrics::Gatherer::_wakeUpPm2(void *param)
 {
@@ -64,9 +68,8 @@ bool Metrics::Gatherer::_getAllSensorData(void *param)
     return true;
 }
 
-void Metrics::Gatherer::setup(std::shared_ptr<Timer<>> timer, std::shared_ptr<AirGradient> air_gradient)
+void Metrics::Gatherer::setup(std::shared_ptr<Timer<>> timer)
 {
-    _air_gradient = air_gradient;
     _timer = timer;
 #ifdef HAS_PM
     _air_gradient->PMS_Init();

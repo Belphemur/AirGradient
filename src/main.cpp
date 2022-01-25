@@ -4,7 +4,6 @@
  */
 
 #include "main.h"
-#include <AirGradient.h>
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
 
@@ -18,8 +17,6 @@
 
 using Metrics::Gatherer;
 
-AirGradient ag = AirGradient();
-
 // Config ----------------------------------------------------------------------
 
 // For housekeeping.
@@ -28,7 +25,7 @@ int counter = 0;
 // Config End ------------------------------------------------------------------
 
 SSD1306Wire display(0x3c, SDA, SCL);
-auto timer = timer_create_default();
+auto timer = std::make_shared<Timer<>>();
 auto metrics = std::shared_ptr<Gatherer>(&Gatherer::getInstance());
 auto server = Prometheus::Server(port, metrics);
 
@@ -41,7 +38,7 @@ void setup()
     display.flipScreenVertically();
     showTextRectangle("Init", String(ESP.getChipId(), HEX), true);
 
-    metrics->setup(std::shared_ptr<Timer<>>(&timer), std::shared_ptr<AirGradient>(&ag));
+    metrics->setup(timer);
 
     // Set static IP address if configured.
 #ifdef staticip
@@ -85,12 +82,12 @@ void setup()
     server.setup();
 
     showTextRectangle("Listening To", WiFi.localIP().toString() + ":" + String(port), true);
-    timer.every(screenUpdateFrequencyMs, updateScreen);
+    timer->every(screenUpdateFrequencyMs, updateScreen);
 }
 
 void loop()
 {
-    timer.tick();
+    timer->tick();
     server.loop();
 }
 

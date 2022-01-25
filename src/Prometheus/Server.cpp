@@ -5,7 +5,7 @@
 Prometheus::Server::Server(const int serverPort, std::shared_ptr<Metrics::Gatherer> metrics)
 {
     _serverPort = serverPort;
-    _server = std::unique_ptr<ESP8266WebServer>(new ESP8266WebServer(_serverPort));
+    _server = std::make_unique<ESP8266WebServer>(_serverPort);
     _metrics = metrics;
 }
 
