@@ -81,7 +81,7 @@ void setup()
     server.setup();
 
     showTextRectangle("Listening To", WiFi.localIP().toString() + ":" + String(port), true);
-    updateScreenTicker.attach_ms(screenUpdateFrequencyMs, updateScreen);
+    updateScreenTicker.attach_ms_scheduled(screenUpdateFrequencyMs, updateScreen);
 }
 
 void loop()
