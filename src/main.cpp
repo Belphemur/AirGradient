@@ -6,61 +6,58 @@
 #include "main.h"
 #include <AirGradient.h>
 #include <ESP8266WiFi.h>
-#include <ESP8266WebServer.h>
 #include <WiFiClient.h>
 
 #include <Wire.h>
 #include "SSD1306Wire.h"
 #include <arduino-timer.h>
-#include "Configuration/refresh.h"
 #include "Configuration/user.h"
+#include "Metrics/MetricsGatherer.h"
+#include "Prometheus/Server.h"
+#include "Configuration/sensors.h"
+
+using Metrics::Gatherer;
 
 AirGradient ag = AirGradient();
 
 // Config ----------------------------------------------------------------------
 
-
 // For housekeeping.
 int counter = 0;
-int lastPM2 = 0;
 
 // Config End ------------------------------------------------------------------
 
 SSD1306Wire display(0x3c, SDA, SCL);
-ESP8266WebServer server(port);
 auto timer = timer_create_default();
+auto metrics = &Gatherer::getInstance();
+auto server = Prometheus::Server(port, metrics);
 
-
-void setup() {
+void setup()
+{
     Serial.begin(9600);
 
     // Init Display.
     display.init();
     display.flipScreenVertically();
-    showTextRectangle("Init", String(ESP.getChipId(),HEX),true);
+    showTextRectangle("Init", String(ESP.getChipId(), HEX), true);
 
-    // Enable enabled sensors.
-    if (hasPM) {
-        ag.PMS_Init();
-        WakupPM2(NULL);
-        timer.every(pmSensorOnPeriodMs, WakupPM2);
-    }
-    if (hasCO2) ag.CO2_Init();
-    if (hasSHT) ag.TMP_RH_Init(0x44);
+    metrics->setup(&timer, &ag);
 
     // Set static IP address if configured.
 #ifdef staticip
-    WiFi.config(static_ip,gateway,subnet);
+    WiFi.config(static_ip, gateway, subnet);
 #endif
 
     // Set WiFi mode to client (without this it may try to act as an AP).
     WiFi.mode(WIFI_STA);
 
     // Configure Hostname
-    if ((deviceId != NULL) && (deviceId[0] == '\0')) {
+    if ((deviceId != NULL) && (deviceId[0] == '\0'))
+    {
         Serial.printf("No Device ID is Defined, Defaulting to board defaults");
     }
-    else {
+    else
+    {
         wifi_station_set_hostname(deviceId);
         WiFi.setHostname(deviceId);
     }
@@ -68,7 +65,8 @@ void setup() {
     // Setup and wait for WiFi.
     WiFi.begin(ssid, password);
     Serial.println("");
-    while (WiFi.status() != WL_CONNECTED) {
+    while (WiFi.status() != WL_CONNECTED)
+    {
         delay(500);
         showTextRectangle("Trying to", "connect...", true);
         Serial.print(".");
@@ -83,135 +81,30 @@ void setup() {
     Serial.println(WiFi.macAddress());
     Serial.print("Hostname: ");
     Serial.println(WiFi.hostname());
-    server.on("/", HandleRoot);
-    server.on("/metrics", HandleRoot);
-    server.onNotFound(HandleNotFound);
 
-    server.begin();
-    Serial.println("HTTP server started at ip " + WiFi.localIP().toString() + ":" + String(port));
-    showTextRectangle("Listening To", WiFi.localIP().toString() + ":" + String(port),true);
+    server.setup();
+
+    showTextRectangle("Listening To", WiFi.localIP().toString() + ":" + String(port), true);
     timer.every(screenUpdateFrequencyMs, updateScreen);
 }
 
-bool WakupPM2(void *) {
-    Serial.println("Waking up PM2 sensor");
-    ag.wakeUp();
-    timer.in(pmSensorOnForMs, SleepPM2);
-    return true;
-}
-
-bool SleepPM2(void *) {
-    Serial.println("Saving current PM2 value");
-    auto lastMesure = SetCurrentPM2();
-    if(lastMesure !=0) {
-        ag.sleep();
-        Serial.println("Putting PM2 sensor to sleep");
-    }
-    return true;
-}
-
-void loop() {
+void loop()
+{
     timer.tick();
-    server.handleClient();
-}
-
-int GetCO2() {
-    int stat = ag.getCO2_Raw();
-
-    while (stat <=0 || stat >= 60000){
-        Serial.println("Wrong CO2 reading: " +String(stat));
-        stat = ag.getCO2_Raw();
-        delay(10);
-    }
-    return stat;
-}
-
-int GetPM2() {
-    return lastPM2;
-}
-
-int SetCurrentPM2() {
-    int stat = ag.getPM2_Raw();
-    if(stat>0) {
-        lastPM2 = stat;
-    }
-    Serial.println("Set PM2 to " + String(lastPM2));
-    return stat;
-}
-
-String GenerateMetrics() {
-    String message = "";
-    String idString = "{id=\"" + String(deviceId) + "\",mac=\"" + WiFi.macAddress().c_str() + "\"}";
-
-    if (hasPM) {
-        int stat = GetPM2();
-
-        message += "# HELP pm02 Particulate Matter PM2.5 value\n";
-        message += "# TYPE pm02 gauge\n";
-        message += "pm02";
-        message += idString;
-        message += String(stat);
-        message += "\n";
-    }
-
-    if (hasCO2) {
-        int stat = GetCO2();
-
-        message += "# HELP rco2 CO2 value, in ppm\n";
-        message += "# TYPE rco2 gauge\n";
-        message += "rco2";
-        message += idString;
-        message += String(stat);
-        message += "\n";
-    }
-
-    if (hasSHT) {
-        TMP_RH stat = ag.periodicFetchData();
-
-        message += "# HELP atmp Temperature, in degrees Celsius\n";
-        message += "# TYPE atmp gauge\n";
-        message += "atmp";
-        message += idString;
-        message += String(stat.t);
-        message += "\n";
-
-        message += "# HELP rhum Relative humidity, in percent\n";
-        message += "# TYPE rhum gauge\n";
-        message += "rhum";
-        message += idString;
-        message += String(stat.rh);
-        message += "\n";
-    }
-
-    return message;
-}
-
-void HandleRoot() {
-    server.send(200, "text/plain", GenerateMetrics() );
-}
-
-void HandleNotFound() {
-    String message = "File Not Found\n\n";
-    message += "URI: ";
-    message += server.uri();
-    message += "\nMethod: ";
-    message += (server.method() == HTTP_GET) ? "GET" : "POST";
-    message += "\nArguments: ";
-    message += server.args();
-    message += "\n";
-    for (unsigned int i = 0; i < server.args(); i++) {
-        message += " " + server.argName(i) + ": " + server.arg(i) + "\n";
-    }
-    server.send(404, "text/html", message);
+    server.loop();
 }
 
 // DISPLAY
-void showTextRectangle(String ln1, String ln2, boolean small) {
+void showTextRectangle(String ln1, String ln2, boolean small)
+{
     display.clear();
     display.setTextAlignment(TEXT_ALIGN_LEFT);
-    if (small) {
+    if (small)
+    {
         display.setFont(ArialMT_Plain_16);
-    } else {
+    }
+    else
+    {
         display.setFont(ArialMT_Plain_24);
     }
     display.drawString(32, 16, ln1);
@@ -219,36 +112,34 @@ void showTextRectangle(String ln1, String ln2, boolean small) {
     display.display();
 }
 
-bool updateScreen(void *) {
+bool updateScreen(void *)
+{
+    auto data = metrics->getData();
     // Take a measurement at a fixed interval.
-    switch (counter) {
-        case 0:
-            if (hasPM) {
-                int stat = GetPM2();
-                showTextRectangle("PM2",String(stat),false);
-            }
-            break;
-        case 1:
-            if (hasCO2) {
-                int stat = GetCO2();
-                showTextRectangle("CO2", String(stat), false);
-            }
-            break;
-        case 2:
-            if (hasSHT) {
-                TMP_RH stat = ag.periodicFetchData();
-                showTextRectangle("TMP", String(stat.t, 1) + "C", false);
-            }
-            break;
-        case 3:
-            if (hasSHT) {
-                TMP_RH stat = ag.periodicFetchData();
-                showTextRectangle("HUM", String(stat.rh) + "%", false);
-            }
-            break;
+    switch (counter)
+    {
+#ifdef HAS_PM
+    case 0:
+        showTextRectangle("PM2", String(data.PM2), false);
+        break;
+#endif
+#ifdef HAS_CO2
+    case 1:
+        showTextRectangle("CO2", String(data.CO2), false);
+        break;
+#endif
+#ifdef HAS_SHT
+    case 2:
+        showTextRectangle("TMP", String(data.TMP, 1) + "C", false);
+        break;
+    case 3:
+        showTextRectangle("HUM", String(data.HUM) + "%", false);
+        break;
+#endif
     }
     counter++;
-    if (counter > 3) counter = 0;
+    if (counter > 3)
+        counter = 0;
 
     return true;
 }

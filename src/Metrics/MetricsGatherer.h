@@ -19,15 +19,22 @@ namespace Metrics
         Timer<> *_timer;
         AirGradient *_air_gradient;
         Data _data;
+        Gatherer() {}
 
     public:
-        Gatherer(Timer<> *timer, AirGradient *air_gradient);
-        static Gatherer *instance;
+        static Gatherer &getInstance()
+        {
+            static Gatherer instance; // Guaranteed to be destroyed.
+                                      // Instantiated on first use.
+            return instance;
+        }
+        Gatherer(Gatherer const &) = delete;
+        void operator=(Gatherer const &) = delete;
+
         bool _wakeUpPm2(void *);
         bool _getPm2DataSleep(void *);
-        bool _getAllSensorData(void* );
-        void loop();
-        void setup();
+        bool _getAllSensorData(void *);
+        void setup(Timer<> *timer, AirGradient *air_gradient);
         inline Data getData() { return _data; }
     };
 

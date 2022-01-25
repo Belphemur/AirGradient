@@ -3,29 +3,19 @@
 
 bool static_wakeUpPm2(void *param)
 {
-    return Metrics::Gatherer::instance->_wakeUpPm2(param);
+    return Metrics::Gatherer::getInstance()._wakeUpPm2(param);
 }
 
 bool static_getPm2DataSleep(void *param)
 {
-    return Metrics::Gatherer::instance->_getPm2DataSleep(param);
+    return Metrics::Gatherer::getInstance()._getPm2DataSleep(param);
 }
 
 bool static_getAllSensorData(void *param)
 {
-    return Metrics::Gatherer::instance->_getAllSensorData(param);
+    return Metrics::Gatherer::getInstance()._getAllSensorData(param);
 }
 
-Metrics::Gatherer::Gatherer(Timer<> *timer, AirGradient *air_gradient)
-{
-    _timer = timer;
-    _air_gradient = air_gradient;
-}
-
-void Metrics::Gatherer::loop()
-{
-    _timer->tick();
-}
 
 bool Metrics::Gatherer::_wakeUpPm2(void *param)
 {
@@ -69,17 +59,13 @@ bool Metrics::Gatherer::_getAllSensorData(void *param)
     return true;
 }
 
-void Metrics::Gatherer::setup()
+void Metrics::Gatherer::setup(Timer<> *timer, AirGradient *air_gradient)
 {
-    Metrics::Gatherer::instance = this;
-    using namespace std::placeholders; // for `_1`
+    _air_gradient = air_gradient;
+    _timer = timer;
 #ifdef HAS_PM
     _air_gradient->PMS_Init();
     _wakeUpPm2(NULL);
-    auto wakup = [&](void *)
-    {
-        return true;
-    };
     _timer->every(PM_SENSOR_PERIOD_MS, static_wakeUpPm2);
 #endif
 #ifdef HAS_CO2
@@ -88,7 +74,7 @@ void Metrics::Gatherer::setup()
 #ifdef HAS_SHT
     _air_gradient->TMP_RH_Init(0x44);
 #endif
-#ifdef HAS_CO2 || HAS_SHT
+#if defined(HAS_CO2) || defined(HAS_SHT)
     _timer->every(SENSOR_PERIOD_MS, static_getAllSensorData);
 #endif
 }
