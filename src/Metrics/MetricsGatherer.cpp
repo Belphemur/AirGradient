@@ -9,7 +9,7 @@ Metrics::Gatherer::Gatherer()
 void Metrics::Gatherer::_wakeUpPm2()
 {
     _airGradient->wakeUp();
-    _pm2ReadSleepTicker.once_ms_scheduled(PM_SENSOR_DELAY_BEFORE_READING, std::bind(&Gatherer::_getPm2DataSleep, this));
+    _pm2ReadSleepTicker.once_ms_scheduled(PM_SENSOR_DELAY_BEFORE_READING, [this] { _getPm2DataSleep(); });
 }
 
 void Metrics::Gatherer::_getPm2DataSleep()
@@ -54,7 +54,7 @@ void Metrics::Gatherer::setup()
 {
 #ifdef HAS_PM
     _airGradient->PMS_Init();
-    _pm2WakerUpTicker.attach_ms_scheduled(PM_SENSOR_PERIOD_MS, std::bind(&Gatherer::_wakeUpPm2, this));
+    _pm2WakerUpTicker.attach_ms_scheduled(PM_SENSOR_PERIOD_MS, [this] { _wakeUpPm2(); });
 #endif
 #ifdef HAS_CO2
     _airGradient->CO2_Init();
@@ -63,7 +63,7 @@ void Metrics::Gatherer::setup()
     _airGradient->TMP_RH_Init(0x44);
 #endif
 #if defined(HAS_CO2) || defined(HAS_SHT)
-    _allSensorTicker.attach_ms_scheduled(SENSOR_PERIOD_MS, std::bind(&Gatherer::_getAllSensorData, this));
+    _allSensorTicker.attach_ms_scheduled(SENSOR_PERIOD_MS, [this] { _getAllSensorData(); });
 #endif
 #ifdef HAS_PM
     _wakeUpPm2();

@@ -2,6 +2,6 @@
 #ifndef Main_h
 #define Main_h
 
-void showTextRectangle(String ln1, String ln2, boolean small);
+void showTextRectangle(const String& ln1, const String& ln2, boolean small);
 void updateScreen();
 #endif

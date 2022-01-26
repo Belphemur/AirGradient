@@ -1,4 +1,6 @@
 #include "Server.h"
+
+#include <utility>
 #include "Configuration/sensors.h"
 #include "Configuration/user.h"
 
@@ -6,7 +8,7 @@ Prometheus::Server::Server(const int serverPort, std::shared_ptr<Metrics::Gather
 {
     _serverPort = serverPort;
     _server = std::make_unique<ESP8266WebServer>(_serverPort);
-    _metrics = metrics;
+    _metrics = std::move(metrics);
 }
 
 Prometheus::Server::~Server()
@@ -22,9 +24,9 @@ void Prometheus::Server::loop()
 
 void Prometheus::Server::setup()
 {
-    _server->on("/", std::bind(&Prometheus::Server::_handleRoot, this));
-    _server->on("/metrics", std::bind(&Prometheus::Server::_handleRoot, this));
-    _server->onNotFound(std::bind(&Prometheus::Server::_handleNotFound, this));
+    _server->on("/", [this] { _handleRoot(); });
+    _server->on("/metrics", [this] { _handleRoot(); });
+    _server->onNotFound([this] { _handleNotFound(); });
 
     _server->begin();
     Serial.println("HTTP server started at ip " + WiFi.localIP().toString() + ":" + String(_serverPort));

@@ -35,7 +35,7 @@ void setup()
     // Init Display.
     display.init();
     display.flipScreenVertically();
-    showTextRectangle("Init", String(ESP.getChipId(), HEX), true);
+    showTextRectangle("Init", String(EspClass::getChipId(), HEX), true);
 
     metrics->setup();
 
@@ -90,7 +90,7 @@ void loop()
 }
 
 // DISPLAY
-void showTextRectangle(String ln1, String ln2, boolean small)
+void showTextRectangle(const String& ln1, const String& ln2, boolean small)
 {
     display.clear();
     display.setTextAlignment(TEXT_ALIGN_LEFT);
