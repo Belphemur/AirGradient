@@ -54,7 +54,6 @@ void Metrics::Gatherer::setup()
 {
 #ifdef HAS_PM
     _airGradient->PMS_Init();
-    _wakeUpPm2();
     _pm2WakerUpTicker.attach_ms_scheduled(PM_SENSOR_PERIOD_MS, std::bind(&Gatherer::_wakeUpPm2, this));
 #endif
 #ifdef HAS_CO2
@@ -65,5 +64,8 @@ void Metrics::Gatherer::setup()
 #endif
 #if defined(HAS_CO2) || defined(HAS_SHT)
     _allSensorTicker.attach_ms_scheduled(SENSOR_PERIOD_MS, std::bind(&Gatherer::_getAllSensorData, this));
+#endif
+#ifdef HAS_PM
+    _wakeUpPm2();
 #endif
 }
