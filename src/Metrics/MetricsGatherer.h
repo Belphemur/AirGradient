@@ -2,13 +2,18 @@
 
 #include <Ticker.h>
 #include <AirGradient.h>
+#include "Configuration/user.h"
+#include "NTP/NTPClient.h"
 
 namespace Metrics {
     struct Data {
-        int CO2;
-        int PM2;
-        float TMP;
-        int HUM;
+        uint16_t CO2 = 0;
+        uint16_t PM2 = 0;
+        float TMP = 0;
+        uint8_t HUM = 0;
+#ifdef HAS_BOOT_TIME
+        time_t BOOT = 0;
+#endif
     };
 
     class Gatherer {
@@ -19,6 +24,7 @@ namespace Metrics {
         Ticker _allSensorTicker;
         std::unique_ptr<AirGradient> _airGradient;
         Data _data;
+        std::unique_ptr<NTP::NTPClient> _ntpClient;
 
         void _wakeUpPm2();
 
@@ -38,6 +44,7 @@ namespace Metrics {
             _data.HUM = 0;
             _data.PM2 = 0;
             _data.TMP = 0;
+            _data.BOOT = 0;
         }
     };
 

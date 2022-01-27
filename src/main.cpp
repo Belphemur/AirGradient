@@ -28,16 +28,13 @@ auto metrics = std::make_shared<Gatherer>();
 auto server = Prometheus::Server(port, metrics);
 Ticker updateScreenTicker;
 
-void setup()
-{
+void setup() {
     Serial.begin(9600);
 
     // Init Display.
     display.init();
     display.flipScreenVertically();
     showTextRectangle("Init", String(EspClass::getChipId(), HEX), true);
-
-    metrics->setup();
 
     // Set static IP address if configured.
 #ifdef staticip
@@ -48,12 +45,9 @@ void setup()
     WiFi.mode(WIFI_STA);
 
     // Configure Hostname
-    if ((deviceId != NULL) && (deviceId[0] == '\0'))
-    {
+    if ((deviceId != NULL) && (deviceId[0] == '\0')) {
         Serial.printf("No Device ID is Defined, Defaulting to board defaults");
-    }
-    else
-    {
+    } else {
         wifi_station_set_hostname(deviceId);
         WiFi.setHostname(deviceId);
     }
@@ -61,8 +55,7 @@ void setup()
     // Setup and wait for WiFi.
     WiFi.begin(ssid, password);
     Serial.println("");
-    while (WiFi.status() != WL_CONNECTED)
-    {
+    while (WiFi.status() != WL_CONNECTED) {
         delay(500);
         showTextRectangle("Trying to", "connect...", true);
         Serial.print(".");
@@ -77,6 +70,7 @@ void setup()
     Serial.println(WiFi.macAddress());
     Serial.print("Hostname: ");
     Serial.println(WiFi.hostname());
+    metrics->setup();
 
     server.setup();
 
@@ -84,22 +78,17 @@ void setup()
     updateScreenTicker.attach_ms_scheduled(screenUpdateFrequencyMs, updateScreen);
 }
 
-void loop()
-{
+void loop() {
     server.loop();
 }
 
 // DISPLAY
-void showTextRectangle(const String& ln1, const String& ln2, boolean small)
-{
+void showTextRectangle(const String &ln1, const String &ln2, boolean small) {
     display.clear();
     display.setTextAlignment(TEXT_ALIGN_LEFT);
-    if (small)
-    {
+    if (small) {
         display.setFont(ArialMT_Plain_16);
-    }
-    else
-    {
+    } else {
         display.setFont(ArialMT_Plain_24);
     }
     display.drawString(32, 16, ln1);
@@ -107,29 +96,27 @@ void showTextRectangle(const String& ln1, const String& ln2, boolean small)
     display.display();
 }
 
-void updateScreen()
-{
+void updateScreen() {
     auto data = metrics->getData();
     // Take a measurement at a fixed interval.
-    switch (counter)
-    {
+    switch (counter) {
 #ifdef HAS_PM
-    case 0:
-        showTextRectangle("PM2", String(data.PM2), false);
-        break;
+        case 0:
+            showTextRectangle("PM2", String(data.PM2), false);
+            break;
 #endif
 #ifdef HAS_CO2
-    case 1:
-        showTextRectangle("CO2", String(data.CO2), false);
-        break;
+        case 1:
+            showTextRectangle("CO2", String(data.CO2), false);
+            break;
 #endif
 #ifdef HAS_SHT
-    case 2:
-        showTextRectangle("TMP", String(data.TMP, 1) + "C", false);
-        break;
-    case 3:
-        showTextRectangle("HUM", String(data.HUM) + "%", false);
-        break;
+        case 2:
+            showTextRectangle("TMP", String(data.TMP, 1) + "C", false);
+            break;
+        case 3:
+            showTextRectangle("HUM", String(data.HUM) + "%", false);
+            break;
 #endif
     }
     counter++;

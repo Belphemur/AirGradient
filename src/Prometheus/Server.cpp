@@ -4,26 +4,22 @@
 #include "Configuration/sensors.h"
 #include "Configuration/user.h"
 
-Prometheus::Server::Server(const int serverPort, std::shared_ptr<Metrics::Gatherer> metrics)
-{
+Prometheus::Server::Server(const int serverPort, std::shared_ptr<Metrics::Gatherer> metrics) {
     _serverPort = serverPort;
     _server = std::make_unique<ESP8266WebServer>(_serverPort);
     _metrics = std::move(metrics);
 }
 
-Prometheus::Server::~Server()
-{
+Prometheus::Server::~Server() {
     _server->stop();
     _server->close();
 }
 
-void Prometheus::Server::loop()
-{
+void Prometheus::Server::loop() {
     _server->handleClient();
 }
 
-void Prometheus::Server::setup()
-{
+void Prometheus::Server::setup() {
     _server->on("/", [this] { _handleRoot(); });
     _server->on("/metrics", [this] { _handleRoot(); });
     _server->onNotFound([this] { _handleNotFound(); });
@@ -32,8 +28,7 @@ void Prometheus::Server::setup()
     Serial.println("HTTP server started at ip " + WiFi.localIP().toString() + ":" + String(_serverPort));
 }
 
-String Prometheus::Server::_generateMetrics()
-{
+String Prometheus::Server::_generateMetrics() {
     String message = "";
     String idString = "{id=\"" + String(deviceId) + "\",mac=\"" + WiFi.macAddress().c_str() + "\"}";
 
@@ -53,7 +48,7 @@ String Prometheus::Server::_generateMetrics()
     message += "# TYPE rco2 gauge\n";
     message += "rco2";
     message += idString;
-    message += String( metrics.CO2);
+    message += String(metrics.CO2);
     message += "\n";
 
 #endif
@@ -75,16 +70,20 @@ String Prometheus::Server::_generateMetrics()
 
 #endif
 
+#ifdef HAS_BOOT_TIME
+    message += "# HELP sensors_boot_time Node boot time, in unixtime.\n";
+    message += "# TYPE sensors_boot_time gauge\n";
+    message += "sensors_boot_time" + idString + String(metrics.BOOT) + "\n";
+#endif
+
     return message;
 }
 
-void Prometheus::Server::_handleRoot()
-{
+void Prometheus::Server::_handleRoot() {
     _server->send(200, "text/plain", _generateMetrics());
 }
 
-void Prometheus::Server::_handleNotFound()
-{
+void Prometheus::Server::_handleNotFound() {
     String message = "File Not Found\n\n";
     message += "URI: ";
     message += _server->uri();
@@ -93,8 +92,7 @@ void Prometheus::Server::_handleNotFound()
     message += "\nArguments: ";
     message += _server->args();
     message += "\n";
-    for (int i = 0; i < _server->args(); i++)
-    {
+    for (int i = 0; i < _server->args(); i++) {
         message += " " + _server->argName(i) + ": " + _server->arg(i) + "\n";
     }
     _server->send(404, "text/html", message);
