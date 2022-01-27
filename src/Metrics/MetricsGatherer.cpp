@@ -33,9 +33,10 @@ void Metrics::Gatherer::_getPm2DataSleep() {
 
 void Metrics::Gatherer::_getAllSensorData() {
 #ifdef HAS_CO2
+    auto previousReading = _data.CO2;
     auto co2 = _airGradient->getCO2_Raw();
 
-    while (co2 <= 0 || co2 >= 60000) {
+    while (co2 <= 0 || co2 >= 60000 || abs(co2 - previousReading) >= 500 ) {
         Serial.println("Wrong CO2 reading: " + String(co2));
         co2 = _airGradient->getCO2_Raw();
         delay(10);
