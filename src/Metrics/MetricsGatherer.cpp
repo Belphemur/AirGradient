@@ -25,7 +25,7 @@ void Metrics::Gatherer::_getPm2DataSleep() {
 
     //Sometimes the sensor give 0 when there isn't any value
     //let's check that it's possible because the previous value was already under 10
-    if (reading >= 0 || previousReading < 10) {
+    if (reading > 0 || previousReading < 10) {
         _data.PM2 = reading;
         _airGradient->sleep();
     }
