@@ -48,7 +48,7 @@ void Metrics::Gatherer::_getAllSensorData() {
 #ifdef HAS_SHT
 
     TMP_RH temp_data = _airGradient->periodicFetchData();
-    _data.TMP = temp_data.t;
+    _data.TMP = temp_data.t + SENSOR_TMP_OFFSET;
     _data.HUM = temp_data.rh;
 
 #endif
