@@ -71,7 +71,7 @@ String Prometheus::Server::_generateMetrics() {
 #endif
 
 #ifdef HAS_BOOT_TIME
-    message += "# HELP sensors_boot_time Node boot time, in unixtime.\n";
+    message += "# HELP sensors_boot_time AirGradient boot time, in unixtime.\n";
     message += "# TYPE sensors_boot_time gauge\n";
     message += "sensors_boot_time" + idString + String(metrics.BOOT) + "\n";
 #endif
