@@ -1,5 +1,11 @@
 #pragma once
 #include <ESP8266WiFi.h>
+#define HAS_BOOT_TIME
+
+
+#ifdef HAS_BOOT_TIME
+extern const char* ntp_server;
+#endif
 
 //screen refresh
 extern const int screenUpdateFrequencyMs;
