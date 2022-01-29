@@ -10,6 +10,8 @@ namespace AQI {
 
         operator double() const { return _total / std::min(_numSamples, N); }
 
+        bool hasReachCapacity() const { return _numSamples >= N; }
+
     private:
         T _samples[N];
         size_t _numSamples{0};
