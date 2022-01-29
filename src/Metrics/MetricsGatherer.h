@@ -4,6 +4,7 @@
 #include <AirGradient.h>
 #include "Configuration/user.h"
 #include "NTP/NTPClient.h"
+#include "s8_uart.h"
 
 namespace Metrics {
     struct Data {
@@ -23,6 +24,8 @@ namespace Metrics {
         Ticker _pm2ReadSleepTicker;
         Ticker _allSensorTicker;
         std::unique_ptr<AirGradient> _airGradient;
+        std::unique_ptr<SoftwareSerial> _s8_software_serial;
+        std::unique_ptr<S8_UART> _s8_sensor;
         Data _data;
         std::unique_ptr<NTP::NTPClient> _ntpClient;
 
@@ -31,6 +34,9 @@ namespace Metrics {
         void _getPm2DataSleep();
 
         void _getAllSensorData();
+
+        void init_sensair_S8();
+
 
     public:
         Gatherer();
@@ -46,6 +52,7 @@ namespace Metrics {
             _data.TMP = 0;
             _data.BOOT = 0;
         }
+
     };
 
 }

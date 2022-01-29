@@ -19,7 +19,7 @@ void Metrics::Gatherer::_getPm2DataSleep() {
     auto reading = _airGradient->getPM2_Raw();
 
     //Getting -1 mean the sensor isn't ready
-    if(reading < 0) {
+    if (reading < 0) {
         return;
     }
 
@@ -34,11 +34,11 @@ void Metrics::Gatherer::_getPm2DataSleep() {
 void Metrics::Gatherer::_getAllSensorData() {
 #ifdef HAS_CO2
     auto previousReading = _data.CO2;
-    auto co2 = _airGradient->getCO2_Raw();
+    auto co2 = _s8_sensor->get_co2();
 
-    while (co2 <= 0 || co2 >= 60000 || (previousReading != 0 && abs(co2 - previousReading) >= 500) ) {
+    while (co2 <= 0 || (previousReading != 0 && abs(co2 - previousReading) >= 500)) {
         Serial.println("Wrong CO2 reading: " + String(co2));
-        co2 = _airGradient->getCO2_Raw();
+        co2 = _s8_sensor->get_co2();
         delay(10);
     }
 
@@ -63,7 +63,7 @@ void Metrics::Gatherer::setup() {
     _pm2WakerUpTicker.attach_ms_scheduled(PM_SENSOR_PERIOD_MS, [this] { _wakeUpPm2(); });
 #endif
 #ifdef HAS_CO2
-    _airGradient->CO2_Init();
+    init_sensair_S8();
 #endif
 #ifdef HAS_SHT
     _airGradient->TMP_RH_Init(0x44);
@@ -74,4 +74,21 @@ void Metrics::Gatherer::setup() {
 #ifdef HAS_PM
     _wakeUpPm2();
 #endif
+}
+
+void Metrics::Gatherer::init_sensair_S8() {
+    _s8_software_serial = std::make_unique<SoftwareSerial>(D4, D3);
+    _s8_software_serial->begin(S8_BAUDRATE);
+    _s8_sensor = std::make_unique<S8_UART>(*_s8_software_serial);
+    // Check if S8 is available
+    S8_sensor sensor_data{};
+    Serial.println(">>> SenseAir S8 NDIR CO2 sensor <<<");
+    Serial.printf("Firmware version: %s\n", sensor_data.firm_version);
+    sensor_data.sensor_type_id = _s8_sensor->get_sensor_type_ID();
+    Serial.print("Sensor type: 0x");
+    printIntToHex(sensor_data.sensor_type_id, 3);
+    Serial.println("");
+    sensor_data.abc_period = _s8_sensor->get_ABC_period();
+    Serial.printf("ABC period: %d\n", sensor_data.abc_period);
+
 }
