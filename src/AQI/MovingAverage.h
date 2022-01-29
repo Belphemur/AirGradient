@@ -8,7 +8,7 @@ namespace AQI {
     public:
         MovingAverage &operator()(T sample);
 
-        operator double() const { return _total / std::min(_numSamples, N); }
+        operator float() const { return _total / std::min(_numSamples, N); }
 
         bool hasReachCapacity() const { return _numSamples >= N; }
 
