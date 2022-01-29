@@ -100,14 +100,15 @@ void Metrics::Gatherer::init_sensair_S8() {
     _s8SoftwareSerial->begin(S8_BAUDRATE);
     _s8Sensor = std::make_unique<S8_UART>(*_s8SoftwareSerial);
     // Check if S8 is available
-    S8_sensor sensor_data{};
+    S8_sensor sensorData{};
+    _s8Sensor->get_firmware_version(sensorData.firm_version);
     Serial.println(">>> SenseAir S8 NDIR CO2 sensor <<<");
-    Serial.printf("Firmware version: %s\n", sensor_data.firm_version);
-    sensor_data.sensor_type_id = _s8Sensor->get_sensor_type_ID();
+    Serial.printf("Firmware version: %s\n", sensorData.firm_version);
+    sensorData.sensor_type_id = _s8Sensor->get_sensor_type_ID();
     Serial.print("Sensor type: 0x");
-    printIntToHex(sensor_data.sensor_type_id, 3);
+    printIntToHex(sensorData.sensor_type_id, 3);
     Serial.println("");
-    sensor_data.abc_period = _s8Sensor->get_ABC_period();
-    Serial.printf("ABC period: %d\n", sensor_data.abc_period);
+    sensorData.abc_period = _s8Sensor->get_ABC_period();
+    Serial.printf("ABC period: %d\n", sensorData.abc_period);
 
 }
