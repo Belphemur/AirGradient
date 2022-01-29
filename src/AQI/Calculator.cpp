@@ -57,7 +57,7 @@ namespace AQI {
     }
 
     float Calculator::getAQI() const {
-        float pm2Avg = _average;
+        auto pm2Avg = _average.getAverage();
         auto breakpoint = _getPM25Breakpoints(pm2Avg);
         return _getAQI(breakpoint, pm2Avg);
     }
@@ -68,7 +68,7 @@ namespace AQI {
 
     void Calculator::_recordMetric() {
         auto pm25 = _metrics->getData().PMS_data.PM_AE_UG_2_5;
-        _average(pm25);
-        Serial.printf("Record PM2.5 (%d) for AVG: (%f)\n", pm25, (float) _average);
+        _average.addSample(pm25);
+        Serial.printf("Record PM2.5 (%d) for AVG: (%f)\n", pm25, _average.getAverage());
     }
 }

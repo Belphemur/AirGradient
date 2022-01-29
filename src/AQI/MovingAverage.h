@@ -6,7 +6,7 @@ namespace AQI {
     template<typename T, size_t N>
     class MovingAverage {
     public:
-        MovingAverage &operator()(T sample) {
+        MovingAverage & addSample(T sample) {
             _total += sample;
             if (_numSamples < N)
                 _samples[_numSamples++] = sample;
@@ -20,7 +20,13 @@ namespace AQI {
             return *this;
         }
 
-        operator float() const { return _total / std::min(_numSamples, N); }
+        float getAverage() const {
+            auto denominator = std::min(_numSamples, N);
+            if (_total == 0 || denominator == 0) {
+                return 0;
+            }
+            return _total / denominator;
+        }
 
         bool hasReachCapacity() const { return _numSamples >= N; }
 
