@@ -13,19 +13,21 @@
 #include "Metrics/MetricsGatherer.h"
 #include "Prometheus/Server.h"
 #include "Configuration/sensors.h"
+#include "AQI/Calculator.h"
 
 using Metrics::Gatherer;
 
 // Config ----------------------------------------------------------------------
 
 // For housekeeping.
-int counter = 0;
+uint8_t counter = 0;
 
 // Config End ------------------------------------------------------------------
 
 SSD1306Wire display(0x3c, SDA, SCL);
 auto metrics = std::make_shared<Gatherer>();
-auto server = Prometheus::Server(port, metrics);
+auto aqiCalculator = std::make_shared<AQI::Calculator>(metrics);
+auto server = Prometheus::Server(port, metrics, std::shared_ptr<AQI::Calculator>());
 Ticker updateScreenTicker;
 
 void setup() {
@@ -118,8 +120,12 @@ void updateScreen() {
             showTextRectangle("HUM", String(data.HUM, 1) + "%", false);
             break;
 #endif
+#ifdef HAS_PM
+        case 4:
+            auto aqi = aqiCalculator->isAQIAvailable() ? String(aqiCalculator->getAQI(), 1) : "N/A";
+            showTextRectangle("AQI", aqi, false);
+            break;
+#endif
     }
-    counter++;
-    if (counter > 3)
-        counter = 0;
+    counter = ++counter % 5;
 }

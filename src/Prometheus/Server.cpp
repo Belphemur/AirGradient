@@ -4,10 +4,13 @@
 #include "Configuration/sensors.h"
 #include "Configuration/user.h"
 
-Prometheus::Server::Server(const int serverPort, std::shared_ptr<Metrics::Gatherer> metrics) {
-    _serverPort = serverPort;
+Prometheus::Server::Server(const int serverPort,
+                           std::shared_ptr<Metrics::Gatherer> metrics,
+                           std::shared_ptr<AQI::Calculator> aqiCalculator)
+        : _serverPort(serverPort),
+          _metrics(std::move(metrics)),
+          _aqiCalculator(std::move(aqiCalculator)) {
     _server = std::make_unique<ESP8266WebServer>(_serverPort);
-    _metrics = std::move(metrics);
 }
 
 Prometheus::Server::~Server() {
@@ -55,6 +58,15 @@ String Prometheus::Server::_generateMetrics() {
     message += _getIdString("type", "PM10.0");
     message += String(metrics.PMS_data.PM_AE_UG_10_0);
     message += "\n";
+
+    if(_aqiCalculator->isAQIAvailable()) {
+        message += "# HELP air_quality_index Air Quality Index (AQI)\n";
+        message += "# TYPE air_quality_index gauge\n";
+        message += "air_quality_index";
+        message += _getIdString("type", "PM2.5");
+        message += String(_aqiCalculator->getAQI());
+        message += "\n";
+    }
 #endif
 
 #ifdef HAS_CO2
@@ -97,7 +109,8 @@ String Prometheus::Server::_getIdString(const char *labelType, const char *label
     if (labelType == nullptr || labelValue == nullptr)
         return "{id=\"" + String(deviceId) + "\",mac=\"" + WiFi.macAddress().c_str() + "\"}";
 
-    return "{id=\"" + String(deviceId) + "\",mac=\"" + WiFi.macAddress().c_str() + "\"," + labelType + "=\"" +labelValue+ "\"}";
+    return "{id=\"" + String(deviceId) + "\",mac=\"" + WiFi.macAddress().c_str() + "\"," + labelType + "=\"" +
+           labelValue + "\"}";
 }
 
 void Prometheus::Server::_handleRoot() {
