@@ -4,7 +4,7 @@
 #include "Configuration/sensors.h"
 #include "Configuration/user.h"
 
-Prometheus::Server::Server(const int serverPort,
+Prometheus::Server::Server(uint16_t serverPort,
                            std::shared_ptr<Metrics::Gatherer> metrics,
                            std::shared_ptr<AQI::Calculator> aqiCalculator)
         : _serverPort(serverPort),

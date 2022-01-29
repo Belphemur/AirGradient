@@ -22,7 +22,7 @@ namespace Prometheus {
         String _getIdString(const char *labelType = nullptr, const char *labelValue = nullptr) const;
 
     public:
-        Server(const int serverPort, std::shared_ptr<Metrics::Gatherer> metrics,
+        Server(uint16_t serverPort, std::shared_ptr<Metrics::Gatherer> metrics,
                std::shared_ptr<AQI::Calculator> aqiCalculator);
 
         void loop();

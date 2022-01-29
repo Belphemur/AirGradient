@@ -9,7 +9,7 @@ const char * deviceId = "";
 //Wifi information
 const char* ssid = "";
 const char* password = "";
-const int port = 9925;
+const uint16_t port = 9925;
 
 #ifdef staticip
 IPAddress static_ip(192, 168, 42, 20);

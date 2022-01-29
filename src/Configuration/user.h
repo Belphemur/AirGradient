@@ -16,7 +16,7 @@ extern const char * deviceId;
 //Wifi information
 extern const char* ssid;
 extern const char* password;
-extern const int port;
+extern const uint16_t port;
 
 // Uncomment the line below to configure a static IP address.
 //#define staticip
