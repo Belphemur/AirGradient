@@ -27,7 +27,7 @@ uint8_t counter = 0;
 SSD1306Wire display(0x3c, SDA, SCL);
 auto metrics = std::make_shared<Gatherer>();
 auto aqiCalculator = std::make_shared<AQI::Calculator>(metrics);
-auto server = Prometheus::Server(port, metrics, std::shared_ptr<AQI::Calculator>());
+auto server = Prometheus::Server(port, metrics, aqiCalculator);
 Ticker updateScreenTicker;
 
 void setup() {
