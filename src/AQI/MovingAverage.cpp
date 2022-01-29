@@ -7,7 +7,7 @@ namespace AQI {
         if (_numSamples < N)
             _samples[_numSamples++] = sample;
         else {
-            const auto index = ++_numSamples % N;
+            auto index = ++_numSamples % N;
             _numSamples = N + index;
             T &oldest = _samples[index];
             _total -= oldest;

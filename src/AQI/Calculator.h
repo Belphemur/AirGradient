@@ -5,7 +5,8 @@
 #include "AQI/MovingAverage.h"
 
 #define GATHER_METRIC_EVERY_X_SECS 900
-#define NUM_OF_METRICS_IN_24H 86400/GATHER_METRIC_EVERY_X_SECS
+#define GATHER_PERIOD_SECS 86400
+#define NUM_OF_METRICS GATHER_PERIOD_SECS/GATHER_METRIC_EVERY_X_SECS
 
 
 namespace AQI {
@@ -38,7 +39,7 @@ namespace AQI {
     private:
         std::shared_ptr<Metrics::Gatherer> _metrics;
         Ticker _ticker;
-        MovingAverage<uint16_t, NUM_OF_METRICS_IN_24H> _average;
+        MovingAverage<uint16_t, NUM_OF_METRICS> _average;
 
         Breakpoints _getPM25Breakpoints(float pm25Avg) const;
 
