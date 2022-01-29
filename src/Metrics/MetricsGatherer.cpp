@@ -37,7 +37,7 @@ void Metrics::Gatherer::_getAllSensorData() {
     while (co2 <= 0 || (previousReading != 0 && abs(co2 - previousReading) >= 500)) {
         Serial.println("Wrong CO2 reading: " + String(co2));
         co2 = _s8Sensor->get_co2();
-        delay(10);
+        delay(100);
     }
 
     _data.CO2 = co2;
