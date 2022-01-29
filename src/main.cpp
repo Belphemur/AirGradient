@@ -115,7 +115,7 @@ void updateScreen() {
             showTextRectangle("TMP", String(data.TMP, 1) + "C", false);
             break;
         case 3:
-            showTextRectangle("HUM", String(data.HUM) + "%", false);
+            showTextRectangle("HUM", String(data.HUM, 1) + "%", false);
             break;
 #endif
     }

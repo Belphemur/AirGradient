@@ -3,7 +3,6 @@
 #include "Configuration/user.h"
 
 Metrics::Gatherer::Gatherer() {
-    _airGradient = std::make_unique<AirGradient>();
 #ifdef HAS_BOOT_TIME
     _ntpClient = std::make_unique<NTP::NTPClient>();
 #endif
@@ -16,7 +15,7 @@ void Metrics::Gatherer::_wakeUpPm2() {
 
 void Metrics::Gatherer::_getPm2DataSleep() {
     auto previousReading = _data.PMS_data.PM_AE_UG_2_5;
-    PMS::DATA data {};
+    PMS::DATA data{};
     if (!_pms_sensor->readUntil(data, 2000)) {
         Serial.println("Couldn't get a reading of PMS sensor");
         return;
@@ -46,9 +45,13 @@ void Metrics::Gatherer::_getAllSensorData() {
 
 #ifdef HAS_SHT
 
-    TMP_RH temp_data = _airGradient->periodicFetchData();
-    _data.TMP = temp_data.t + SENSOR_TMP_OFFSET;
-    _data.HUM = temp_data.rh;
+    if (!_shtSensor->readSample()) {
+        Serial.println("Can't read SHT sensor data");
+
+    } else {
+        _data.TMP = _shtSensor->getTemperature() + SENSOR_TMP_OFFSET;
+        _data.HUM = _shtSensor->getHumidity();
+    }
 
 #endif
 }
@@ -64,14 +67,22 @@ void Metrics::Gatherer::setup() {
     init_sensair_S8();
 #endif
 #ifdef HAS_SHT
-    _airGradient->TMP_RH_Init(0x44);
+    init_sht();
 #endif
 #if defined(HAS_CO2) || defined(HAS_SHT)
     _allSensorTicker.attach_ms_scheduled(SENSOR_PERIOD_MS, [this] { _getAllSensorData(); });
 #endif
-#ifdef HAS_PM
-    _wakeUpPm2();
-#endif
+}
+
+void Metrics::Gatherer::init_sht() {
+    _shtSensor = std::make_unique<SHTSensor>();
+    _shtSensor->setAccuracy(SHTSensor::SHT_ACCURACY_HIGH);
+    TwoWire wire;
+    wire.begin(0x44);
+    if(!_shtSensor->init(wire)) {
+        Serial.println("Can't init the SHT sensor");
+        return;
+    }
 }
 
 void Metrics::Gatherer::init_pms() {
@@ -79,9 +90,7 @@ void Metrics::Gatherer::init_pms() {
     _pmsSoftwareSerial->begin(PMS_BAUDRATE);
     _pms_sensor = std::make_unique<PMS>(*_pmsSoftwareSerial);
 
-    delay(1000);
-
-    _getPm2DataSleep();
+    _wakeUpPm2();
 
     _pm2WakerUpTicker.attach_ms_scheduled(PM_SENSOR_PERIOD_MS, [this] { _wakeUpPm2(); });
 }
