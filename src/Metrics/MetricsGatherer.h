@@ -28,7 +28,7 @@ namespace Metrics {
         Ticker _allSensorTicker;
         //S8
         std::unique_ptr<SoftwareSerial> _s8SoftwareSerial;
-        std::unique_ptr<S8_UART> _s8_sensor;
+        std::unique_ptr<S8_UART> _s8Sensor;
         //PMS
         std::unique_ptr<SoftwareSerial> _pmsSoftwareSerial;
         std::unique_ptr<PMS> _pms_sensor;
