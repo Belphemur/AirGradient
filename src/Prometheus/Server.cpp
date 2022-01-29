@@ -30,16 +30,30 @@ void Prometheus::Server::setup() {
 
 String Prometheus::Server::_generateMetrics() {
     String message = "";
-    String idString = "{id=\"" + String(deviceId) + "\",mac=\"" + WiFi.macAddress().c_str() + "\"}";
+    String idString = _getIdString();
 
     auto metrics = _metrics->getData();
 
 #ifdef HAS_PM
-    message += "# HELP pm02 Particulate Matter PM2.5 value\n";
-    message += "# TYPE pm02 gauge\n";
-    message += "pm02";
-    message += idString;
-    message += String(metrics.PM2);
+    message += "# HELP particle_count Count of Particulate Matter in µg/m3\n";
+    message += "# TYPE particle_count gauge\n";
+    message += "particle_count";
+    message += _getIdString("type", "PM2.5");
+    message += String(metrics.PMS_data.PM_AE_UG_2_5);
+    message += "\n";
+
+    message += "# HELP particle_count Count of Particulate Matter in µg/m3\n";
+    message += "# TYPE particle_count gauge\n";
+    message += "particle_count";
+    message += _getIdString("type", "PM1.0");
+    message += String(metrics.PMS_data.PM_AE_UG_1_0);
+    message += "\n";
+
+    message += "# HELP particle_count Count of Particulate Matter in µg/m3\n";
+    message += "# TYPE particle_count gauge\n";
+    message += "particle_count";
+    message += _getIdString("type", "PM10.0");
+    message += String(metrics.PMS_data.PM_AE_UG_10_0);
     message += "\n";
 #endif
 
@@ -77,6 +91,13 @@ String Prometheus::Server::_generateMetrics() {
 #endif
 
     return message;
+}
+
+String Prometheus::Server::_getIdString(const char *labelType, const char *labelValue) const {
+    if (labelType == nullptr || labelValue == nullptr)
+        return "{id=\"" + String(deviceId) + "\",mac=\"" + WiFi.macAddress().c_str() + "\"}";
+
+    return "{id=\"" + String(deviceId) + "\",mac=\"" + WiFi.macAddress().c_str() + "\"," + labelType + "=\"" +labelValue+ "\"}";
 }
 
 void Prometheus::Server::_handleRoot() {

@@ -14,12 +14,14 @@ namespace Prometheus
         void _handleRoot();
         void _handleNotFound();
         String _generateMetrics();
+        String _getIdString(const char *labelType = nullptr, const char *labelValue = nullptr) const;
 
     public:
         Server(const int serverPort, std::shared_ptr<Metrics::Gatherer> metrics);
         void loop();
         void setup();
         virtual ~Server();
+
     };
 
 }

@@ -10,24 +10,23 @@ Metrics::Gatherer::Gatherer() {
 }
 
 void Metrics::Gatherer::_wakeUpPm2() {
-    _airGradient->wakeUp();
+    _pms_sensor->wakeUp();
     _pm2ReadSleepTicker.once_ms_scheduled(PM_SENSOR_DELAY_BEFORE_READING, [this] { _getPm2DataSleep(); });
 }
 
 void Metrics::Gatherer::_getPm2DataSleep() {
-    auto previousReading = _data.PM2;
-    auto reading = _airGradient->getPM2_Raw();
-
-    //Getting -1 mean the sensor isn't ready
-    if (reading < 0) {
+    auto previousReading = _data.PMS_data.PM_AE_UG_2_5;
+    PMS::DATA data {};
+    if (!_pms_sensor->readUntil(data, 2000)) {
+        Serial.println("Couldn't get a reading of PMS sensor");
         return;
     }
 
     //Sometimes the sensor give 0 when there isn't any value
     //let's check that it's possible because the previous value was already under 10
-    if (reading > 0 || previousReading < 10) {
-        _data.PM2 = reading;
-        _airGradient->sleep();
+    if (data.PM_AE_UG_2_5 > 0 || previousReading < 10) {
+        _data.PMS_data = data;
+        _pms_sensor->sleep();
     }
 }
 
@@ -59,8 +58,7 @@ void Metrics::Gatherer::setup() {
     _data.BOOT = _ntpClient->getUtcUnixEpoch();
 #endif
 #ifdef HAS_PM
-    _airGradient->PMS_Init();
-    _pm2WakerUpTicker.attach_ms_scheduled(PM_SENSOR_PERIOD_MS, [this] { _wakeUpPm2(); });
+    init_pms();
 #endif
 #ifdef HAS_CO2
     init_sensair_S8();
@@ -76,10 +74,22 @@ void Metrics::Gatherer::setup() {
 #endif
 }
 
+void Metrics::Gatherer::init_pms() {
+    _pmsSoftwareSerial = std::make_unique<SoftwareSerial>(D5, D6);
+    _pmsSoftwareSerial->begin(PMS_BAUDRATE);
+    _pms_sensor = std::make_unique<PMS>(*_pmsSoftwareSerial);
+
+    delay(1000);
+
+    _getPm2DataSleep();
+
+    _pm2WakerUpTicker.attach_ms_scheduled(PM_SENSOR_PERIOD_MS, [this] { _wakeUpPm2(); });
+}
+
 void Metrics::Gatherer::init_sensair_S8() {
-    _s8_software_serial = std::make_unique<SoftwareSerial>(D4, D3);
-    _s8_software_serial->begin(S8_BAUDRATE);
-    _s8_sensor = std::make_unique<S8_UART>(*_s8_software_serial);
+    _s8SoftwareSerial = std::make_unique<SoftwareSerial>(D4, D3);
+    _s8SoftwareSerial->begin(S8_BAUDRATE);
+    _s8_sensor = std::make_unique<S8_UART>(*_s8SoftwareSerial);
     // Check if S8 is available
     S8_sensor sensor_data{};
     Serial.println(">>> SenseAir S8 NDIR CO2 sensor <<<");

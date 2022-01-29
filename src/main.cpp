@@ -102,7 +102,7 @@ void updateScreen() {
     switch (counter) {
 #ifdef HAS_PM
         case 0:
-            showTextRectangle("PM2", String(data.PM2), false);
+            showTextRectangle("PM2", String(data.PMS_data.PM_AE_UG_2_5), false);
             break;
 #endif
 #ifdef HAS_CO2
