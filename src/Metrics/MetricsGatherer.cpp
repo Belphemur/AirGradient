@@ -30,18 +30,6 @@ void Metrics::Gatherer::_getPm2DataSleep() {
 }
 
 void Metrics::Gatherer::_getAllSensorData() {
-#ifdef HAS_CO2
-    auto previousReading = _data.CO2;
-    auto co2 = _s8Sensor->get_co2();
-
-    while (co2 <= 0 || (previousReading != 0 && abs(co2 - previousReading) >= 500)) {
-        Serial.println("Wrong CO2 reading: " + String(co2));
-        co2 = _s8Sensor->get_co2();
-        delay(100);
-    }
-
-    _data.CO2 = co2;
-#endif
 
 #ifdef HAS_SHT
 
@@ -54,6 +42,26 @@ void Metrics::Gatherer::_getAllSensorData() {
     }
 
 #endif
+
+#ifdef HAS_CO2
+    auto previousReading = _data.CO2;
+    auto co2 = _s8Sensor->get_co2();
+
+    uint8_t timeout = 0;
+
+    while (co2 <= 0 || (previousReading != 0 && abs(co2 - previousReading) >= 500)) {
+        co2 = _s8Sensor->get_co2();
+        delay(200);
+        if (++timeout > 3) {
+            Serial.println("Couldn't get proper CO2 reading");
+            return;
+        }
+    }
+
+    _data.CO2 = co2;
+#endif
+
+
 }
 
 void Metrics::Gatherer::setup() {
@@ -76,10 +84,10 @@ void Metrics::Gatherer::setup() {
 
 void Metrics::Gatherer::init_sht() {
     _shtSensor = std::make_unique<SHTSensor>();
-    _shtSensor->setAccuracy(SHTSensor::SHT_ACCURACY_HIGH);
+    _shtSensor->setAccuracy(SHTSensor::SHT_ACCURACY_MEDIUM);
     TwoWire wire;
     wire.begin(0x44);
-    if(!_shtSensor->init(wire)) {
+    if (!_shtSensor->init(wire)) {
         Serial.println("Can't init the SHT sensor");
         return;
     }
