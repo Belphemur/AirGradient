@@ -3,7 +3,7 @@
 #include <Arduino.h>
 
 namespace AQI {
-    template<typename T, size_t N>
+    template<typename T, typename Total, size_t N>
     class MovingAverage {
     public:
         MovingAverage & addSample(T sample) {
@@ -21,7 +21,7 @@ namespace AQI {
         }
 
         float getAverage() const {
-            auto denominator = std::min(_numSamples, N);
+            auto denominator = static_cast<float>(std::min(_numSamples, N));
             if (_total == 0 || denominator == 0) {
                 return 0;
             }
@@ -33,7 +33,7 @@ namespace AQI {
     private:
         T _samples[N];
         size_t _numSamples{0};
-        T _total{0};
+        Total _total{0};
     };
 }
 

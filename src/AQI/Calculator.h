@@ -39,7 +39,7 @@ namespace AQI {
     private:
         std::shared_ptr<Metrics::Gatherer> _metrics;
         Ticker _ticker;
-        MovingAverage<uint16_t, NUM_OF_METRICS> _average;
+        MovingAverage<uint16_t, uint16_t, NUM_OF_METRICS> _average;
 
         Breakpoints _getPM25Breakpoints(float pm25Avg) const;
 
