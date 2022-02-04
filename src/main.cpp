@@ -10,12 +10,15 @@
 #include <Wire.h>
 #include "SSD1306Wire.h"
 #include "Configuration/user.h"
-#include "Metrics/MetricsGatherer.h"
-#include "Prometheus/Server.h"
-#include "Configuration/sensors.h"
-#include "AQI/Calculator.h"
+#include "Metrics/MetricGatherer.h"
+#include "Sensors/Particle/PMSXSensor.h"
+#include "Sensors/Temperature/SHTXSensor.h"
+#include "Sensors/CO2/SensairS8Sensor.h"
+#include "Sensors/Time/BootTimeSensor.h"
+#include "AQI/AQICalculator.h"
+#include "Prometheus/PrometheusServer.h"
 
-using Metrics::Gatherer;
+using namespace AirGradient;
 
 // Config ----------------------------------------------------------------------
 
@@ -25,13 +28,21 @@ uint8_t counter = 0;
 // Config End ------------------------------------------------------------------
 
 SSD1306Wire display(0x3c, SDA, SCL);
-auto metrics = std::make_shared<Gatherer>();
-auto aqiCalculator = std::make_shared<AQI::Calculator>(metrics);
-auto server = Prometheus::Server(port, metrics, aqiCalculator);
+
+auto metrics = std::make_shared<MetricGatherer>();
+auto aqiCalculator = std::make_shared<AQICalculator>(metrics);
+auto server = std::make_unique<PrometheusServer>(port, deviceId, metrics, aqiCalculator);
 Ticker updateScreenTicker;
+
+
 
 void setup() {
     Serial.begin(9600);
+
+    metrics->addSensor(std::make_unique<PMSXSensor>())
+            .addSensor(std::make_unique<SHTXSensor>())
+            .addSensor(std::make_unique<SensairS8Sensor>())
+            .addSensor(std::make_unique<BootTimeSensor>(ntp_server));
 
     // Init Display.
     display.init();
@@ -72,16 +83,17 @@ void setup() {
     Serial.println(WiFi.macAddress());
     Serial.print("Hostname: ");
     Serial.println(WiFi.hostname());
-    metrics->setup();
 
-    server.setup();
+    metrics->begin();
+
+    server->begin();
 
     showTextRectangle("Listening To", WiFi.localIP().toString() + ":" + String(port), true);
     updateScreenTicker.attach_ms_scheduled(screenUpdateFrequencyMs, updateScreen);
 }
 
 void loop() {
-    server.loop();
+    server->handleRequests();
 }
 
 // DISPLAY
@@ -100,32 +112,42 @@ void showTextRectangle(const String &ln1, const String &ln2, boolean small) {
 
 void updateScreen() {
     auto data = metrics->getData();
+    auto sensorType = metrics->getSensorTypes();
     // Take a measurement at a fixed interval.
     switch (counter) {
-#ifdef HAS_PM
+
         case 0:
-            showTextRectangle("PM2", String(data.PMS_data.PM_AE_UG_2_5), false);
+            if (!(sensorType & SensorType::Particle)) {
+                showTextRectangle("PM2", String(data.PARTICLE_DATA.PM_2_5), false);
+            }
             break;
-#endif
-#ifdef HAS_CO2
+
         case 1:
-            showTextRectangle("CO2", String(data.CO2), false);
+            if (!(sensorType & SensorType::CO2)) {
+                showTextRectangle("CO2", String(data.CO2), false);
+            }
             break;
-#endif
-#ifdef HAS_SHT
+
         case 2:
-            showTextRectangle("TMP", String(data.TMP, 1) + "C", false);
+            if (!(sensorType & SensorType::Temperature)) {
+                showTextRectangle("TMP", String(data.TMP, 1) + "C", false);
+            }
             break;
+
         case 3:
-            showTextRectangle("HUM", String(data.HUM, 1) + "%", false);
+            if (!(sensorType & SensorType::Humidity)) {
+                showTextRectangle("HUM", String(data.HUM, 1) + "%", false);
+            }
             break;
-#endif
-#ifdef HAS_PM
+
         case 4:
-            auto aqi = aqiCalculator->isAQIAvailable() ? String(aqiCalculator->getAQI(), 1) : "N/A";
-            showTextRectangle("AQI", aqi, false);
+            if (!(sensorType & SensorType::Particle)) {
+                auto aqi = aqiCalculator->isAQIAvailable() ? String(aqiCalculator->getAQI(), 1) : "N/A";
+                showTextRectangle("AQI", aqi, false);
+
+            }
             break;
-#endif
     }
+
     counter = ++counter % 5;
 }
