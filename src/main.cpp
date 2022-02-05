@@ -35,7 +35,6 @@ auto server = std::make_unique<PrometheusServer>(port, deviceId, metrics, aqiCal
 Ticker updateScreenTicker;
 
 
-
 void setup() {
     Serial.begin(9600);
 
@@ -119,34 +118,34 @@ void updateScreen() {
         case 0:
             if (!(sensorType & SensorType::Particle)) {
                 showTextRectangle("PM2", String(data.PARTICLE_DATA.PM_2_5), false);
+                break;
             }
-            break;
 
         case 1:
             if (!(sensorType & SensorType::CO2)) {
                 showTextRectangle("CO2", String(data.CO2), false);
+                break;
             }
-            break;
 
         case 2:
             if (!(sensorType & SensorType::Temperature)) {
                 showTextRectangle("TMP", String(data.TMP, 1) + "C", false);
+                break;
             }
-            break;
 
         case 3:
             if (!(sensorType & SensorType::Humidity)) {
                 showTextRectangle("HUM", String(data.HUM, 1) + "%", false);
+                break;
             }
-            break;
 
         case 4:
             if (!(sensorType & SensorType::Particle)) {
                 auto aqi = aqiCalculator->isAQIAvailable() ? String(aqiCalculator->getAQI(), 1) : "N/A";
                 showTextRectangle("AQI", aqi, false);
-
+                break;
             }
-            break;
+
     }
 
     counter = ++counter % 5;
