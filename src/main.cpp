@@ -29,7 +29,7 @@ uint8_t counter = 0;
 
 SSD1306Wire display(0x3c, SDA, SCL);
 
-auto metrics = std::make_shared<MetricGatherer>();
+auto metrics = std::make_shared<MetricGatherer>(-2);
 auto aqiCalculator = std::make_shared<AQICalculator>(metrics);
 auto server = std::make_unique<PrometheusServer>(port, deviceId, metrics, aqiCalculator);
 Ticker updateScreenTicker;
@@ -37,7 +37,7 @@ Ticker updateScreenTicker;
 
 void setup() {
     Serial.begin(9600);
-
+    
     metrics->addSensor(std::make_unique<PMSXSensor>())
             .addSensor(std::make_unique<SHTXSensor>())
             .addSensor(std::make_unique<SensairS8Sensor>())
@@ -84,6 +84,7 @@ void setup() {
     Serial.println(WiFi.hostname());
 
     metrics->begin();
+    aqiCalculator->begin();
 
     server->begin();
 
