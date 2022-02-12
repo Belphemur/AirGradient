@@ -18,7 +18,7 @@
 #include "AQI/AQICalculator.h"
 #include "Prometheus/PrometheusServer.h"
 
-using namespace AirGradient;
+using namespace AirGradient_Internal;
 
 // Config ----------------------------------------------------------------------
 
