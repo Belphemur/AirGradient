@@ -8,7 +8,7 @@
 #include <WiFiClient.h>
 
 #include <Wire.h>
-#include "SSD1306Wire.h"
+#include "U8g2lib.h"
 #include "Configuration/user.h"
 #include "Metrics/MetricGatherer.h"
 #include "Sensors/Particle/PMSXSensor.h"
@@ -17,17 +17,16 @@
 #include "Sensors/Time/BootTimeSensor.h"
 #include "AQI/AQICalculator.h"
 #include "Prometheus/PrometheusServer.h"
+#include "Sensors/TVOC/SGP30Sensor.h"
 
 using namespace AirGradient_Internal;
 
 // Config ----------------------------------------------------------------------
 
-// For housekeeping.
-uint8_t counter = 0;
 
 // Config End ------------------------------------------------------------------
 
-SSD1306Wire display(0x3c, SDA, SCL);
+U8G2_SH1106_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);
 
 auto metrics = std::make_shared<MetricGatherer>(-2);
 auto aqiCalculator = std::make_shared<AQICalculator>(metrics);
@@ -37,16 +36,19 @@ Ticker updateScreenTicker;
 
 void setup() {
     Serial.begin(9600);
-    
+
     metrics->addSensor(std::make_unique<PMSXSensor>())
             .addSensor(std::make_unique<SHTXSensor>())
             .addSensor(std::make_unique<SensairS8Sensor>())
-            .addSensor(std::make_unique<BootTimeSensor>(ntp_server));
+            .addSensor(std::make_unique<BootTimeSensor>(ntp_server))
+            .addSensor(std::make_unique<SGP30Sensor>(), Measurement::CO2);
 
+    Serial.println("Sensors initiated");
     // Init Display.
-    display.init();
-    display.flipScreenVertically();
-    showTextRectangle("Init", String(EspClass::getChipId(), HEX), true);
+    u8g2.begin();
+
+    Serial.println("Screen initiated");
+
 
     // Set static IP address if configured.
 #ifdef staticip
@@ -69,7 +71,7 @@ void setup() {
     Serial.println("");
     while (WiFi.status() != WL_CONNECTED) {
         delay(500);
-        showTextRectangle("Trying to", "connect...", true);
+        updateOLED2("Trying to", "connect to", ssid);
         Serial.print(".");
     }
 
@@ -88,7 +90,7 @@ void setup() {
 
     server->begin();
 
-    showTextRectangle("Listening To", WiFi.localIP().toString() + ":" + String(port), true);
+    updateOLED2("Listening To", WiFi.localIP().toString() + ":" + String(port), "");
     updateScreenTicker.attach_ms_scheduled(screenUpdateFrequencyMs, updateScreen);
 }
 
@@ -96,58 +98,27 @@ void loop() {
     server->handleRequests();
 }
 
-// DISPLAY
-void showTextRectangle(const String &ln1, const String &ln2, boolean small) {
-    display.clear();
-    display.setTextAlignment(TEXT_ALIGN_LEFT);
-    if (small) {
-        display.setFont(ArialMT_Plain_16);
-    } else {
-        display.setFont(ArialMT_Plain_24);
-    }
-    display.drawString(32, 16, ln1);
-    display.drawString(32, 36, ln2);
-    display.display();
+void updateOLED2(String ln1, String ln2, String ln3) {
+    u8g2.firstPage();
+    u8g2.firstPage();
+    do {
+        u8g2.setFont(u8g2_font_t0_16_tf);
+        u8g2.drawStr(1, 10, String(ln1).c_str());
+        u8g2.drawStr(1, 30, String(ln2).c_str());
+        u8g2.drawStr(1, 50, String(ln3).c_str());
+    } while (u8g2.nextPage());
 }
+
 
 void updateScreen() {
     auto data = metrics->getData();
     auto sensorType = metrics->getMeasurements();
-    // Take a measurement at a fixed interval.
-    switch (counter) {
+    auto aqi = aqiCalculator->isAQIAvailable() ? String(aqiCalculator->getAQI(), 1) : "N/A";
 
-        case 0:
-            if (!(sensorType & Measurement::Particle)) {
-                showTextRectangle("PM2", String(data.PARTICLE_DATA.PM_2_5), false);
-                break;
-            }
+    String ln1 = "PM:" + String(data.PARTICLE_DATA.PM_2_5) + " CO2:" + String(data.GAS_DATA.CO2);
+    String ln2 = "AQI:" + String(aqi) + " TVOC:" + String(data.GAS_DATA.TVOC);
+    String ln3 = "C:" + String(data.TMP) + " H:" + String(data.HUM) + "%";
 
-        case 1:
-            if (!(sensorType & Measurement::CO2)) {
-                showTextRectangle("CO2", String(data.GAS_DATA.CO2), false);
-                break;
-            }
+    updateOLED2(ln1, ln2, ln3);
 
-        case 2:
-            if (!(sensorType & Measurement::Temperature)) {
-                showTextRectangle("TMP", String(data.TMP, 1) + "C", false);
-                break;
-            }
-
-        case 3:
-            if (!(sensorType & Measurement::Humidity)) {
-                showTextRectangle("HUM", String(data.HUM, 1) + "%", false);
-                break;
-            }
-
-        case 4:
-            if (!(sensorType & Measurement::Particle)) {
-                auto aqi = aqiCalculator->isAQIAvailable() ? String(aqiCalculator->getAQI(), 1) : "N/A";
-                showTextRectangle("AQI", aqi, false);
-                break;
-            }
-
-    }
-
-    counter = ++counter % 5;
 }
