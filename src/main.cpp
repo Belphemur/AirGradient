@@ -28,7 +28,7 @@ using namespace AirGradient_Internal;
 
 U8G2_SH1106_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);
 
-auto metrics = std::make_shared<MetricGatherer>(-2);
+auto metrics = std::make_shared<MetricGatherer>();
 auto aqiCalculator = std::make_shared<AQICalculator>(metrics);
 auto server = std::make_unique<PrometheusServer>(port, deviceId, metrics, aqiCalculator);
 Ticker updateScreenTicker;
