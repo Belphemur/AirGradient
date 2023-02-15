@@ -93,7 +93,6 @@ void setup() {
 }
 
 void loop() {
-    server->handleRequests();
 }
 
 // DISPLAY
