@@ -37,7 +37,7 @@ Ticker updateScreenTicker;
 
 void setup() {
     Serial.begin(9600);
-    
+
     metrics->addSensor(std::make_unique<PMSXSensor>())
             .addSensor(std::make_unique<SHTXSensor>())
             .addSensor(std::make_unique<SensairS8Sensor>())
